@@ -1,0 +1,36 @@
+[package]
+name = "rfc5934"
+version = "0.1.0"
+description = """
+Trust Anchor Management Protocol (RFC 5934) message types, with the RFC 4073 content collection
+that carries them, for encoding and decoding trust anchor updates such as DoD InstallRoot streams.
+"""
+license = "Apache-2.0 OR MIT"
+categories = ["cryptography", "encoding", "no-std"]
+keywords = ["crypto", "x.509", "pki", "tamp"]
+readme = "README.md"
+edition = "2021"
+rust-version = "1.85"
+
+[features]
+default = ["std"]
+std = ["der/std", "spki/std", "x509-cert/std", "cms/std"]
+
+[dependencies]
+const-oid = { version = "0.10.2", default-features = false, features = ["db"] }
+der = { version = "0.8.1", default-features = false, features = ["alloc", "derive", "oid"] }
+spki = { version = "0.8.0", default-features = false, features = ["alloc"] }
+# `hazmat` for the `Raw` profile: the CRL check below is a discriminator, so it should accept
+# anything structurally a CertificateList rather than apply RFC 5280 profile rules and
+# misreport a non-conformant CRL as "not a CRL at all".
+x509-cert = { version = "0.3.0", default-features = false, features = ["hazmat"] }
+cms = { version = "0.3.0-pre.2", default-features = false }
+x509-ocsp = { version = "0.3.0-pre", default-features = false }
+
+[dev-dependencies]
+hex-literal = "1.0.0"
+
+# x509-ocsp has no 0.3 release yet, so it comes from git until it publishes. Drop this table then;
+# a crates.io release cannot carry git dependencies, and this crate is meant to be published.
+[patch.crates-io]
+x509-ocsp = { git = "https://github.com/RustCrypto/formats.git" }
