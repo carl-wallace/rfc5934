@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "pre-release" ]
+  pull_request:
+    branches: [ "main" ]
+  # Manual re-runs via `gh workflow run ci.yml` (available once this file is
+  # on the default branch).
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  # Both feature shapes: the default enables std, and --no-default-features is the no_std build.
+  # Each catches warnings the other cannot.
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: cargo clippy --all-targets
+      - run: cargo clippy --all-targets --no-default-features
+
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo doc --no-deps
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test
+      - run: cargo test --no-default-features
+
+  # The crate claims no_std; building for a target that has no std is what proves it, since a host
+  # build has std available whether or not the crate asks for it.
+  no-std:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabi
+      - run: cargo build --no-default-features --target thumbv7em-none-eabi
+
+  # The declared rust-version in Cargo.toml.
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.85.0
+      - run: cargo check --all-targets
